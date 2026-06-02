@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exploradores de Animales</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="mis_fotos.js"></script>
+<style>
+:root{
+  --forest:#163A2F;--moss:#2F5E4E;--moss-l:#3d7a65;
+  --sand:#F5F1E8;--ivory:#FAFAF7;
+  --gold:#D4A94F;--gold-l:#e8c472;
+  --carbon:#1A1A1A;--muted:#8a9a8a;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--ivory);color:var(--carbon);overflow-x:hidden;}
+
+/* NAV */
+#topNav{position:fixed;top:0;left:0;right:0;z-index:500;padding:0 40px;height:60px;display:flex;align-items:center;justify-content:space-between;background:rgba(22,58,47,.06);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.07);transition:background .4s,box-shadow .4s;}
+#topNav.scrolled{background:rgba(22,58,47,.95);box-shadow:0 2px 24px rgba(0,0,0,.25);}
+.nav-logo{font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:#fff;letter-spacing:-.3px;white-space:nowrap;}
+.nav-logo .gold{color:var(--gold);}
+.nav-links{display:flex;gap:2px;}
+.nav-links button{font-family:'Inter',sans-serif;font-size:.82rem;font-weight:500;color:rgba(255,255,255,.75);background:transparent;border:none;padding:7px 13px;border-radius:50px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.nav-links button:hover{background:rgba(255,255,255,.1);color:#fff;}
+.nav-links button.active{background:rgba(212,169,79,.18);color:var(--gold);}
+
+/* SECTIONS */
+.section{display:none;}.section.active{display:block;}
+
+/* HERO */
+.hero-wrap{position:relative;height:100vh;min-height:600px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.hero-bg{position:absolute;top:-15%;left:0;right:0;bottom:-15%;background:var(--forest) center/cover no-repeat;will-change:transform;}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(160deg,rgba(22,58,47,.6) 0%,rgba(22,58,47,.25) 45%,rgba(22,58,47,.88) 100%);}
+.hero-content{position:relative;z-index:2;text-align:center;padding:0 28px;max-width:800px;will-change:transform,opacity;}
+.eyebrow{font-family:'Space Grotesk',sans-serif;font-size:.75rem;font-weight:500;letter-spacing:3.5px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.hero-content h1{font-family:'Poppins',sans-serif;font-size:clamp(2.8rem,8vw,6.5rem);font-weight:900;line-height:1;color:#fff;text-shadow:0 4px 48px rgba(0,0,0,.28);margin-bottom:20px;letter-spacing:-2.5px;}
+.hero-sub{font-size:clamp(.95rem,2.5vw,1.15rem);color:rgba(255,255,255,.8);line-height:1.65;margin-bottom:42px;font-weight:300;max-width:540px;margin-left:auto;margin-right:auto;}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+.btn-primary{font-family:'Poppins',sans-serif;font-weight:600;font-size:.95rem;padding:15px 36px;background:var(--gold);color:var(--forest);border:none;border-radius:50px;cursor:pointer;transition:all .25s;}
+.btn-primary:hover{background:var(--gold-l);transform:translateY(-3px);box-shadow:0 10px 28px rgba(212,169,79,.5);}
+.btn-secondary{font-family:'Poppins',sans-serif;font-weight:600;font-size:.95rem;padding:15px 36px;background:transparent;color:#fff;border:2px solid rgba(255,255,255,.45);border-radius:50px;cursor:pointer;transition:all .25s;}
+.btn-secondary:hover{background:rgba(255,255,255,.1);border-color:#fff;transform:translateY(-3px);}
+.scroll-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);z-index:2;}
+.scroll-dot{width:8px;height:8px;background:rgba(255,255,255,.55);border-radius:50%;animation:sdrop 2s ease-in-out infinite;}
+@keyframes sdrop{0%,100%{transform:translateY(0);opacity:.55;}50%{transform:translateY(12px);opacity:1;}}
+
+/* IMPACT */
+.impact-section{background:var(--forest);padding:88px 40px;}
+.impact-inner{max-width:1100px;margin:0 auto;text-align:center;}
+.impact-inner h2{font-family:'Poppins',sans-serif;font-size:clamp(1.6rem,4vw,2.5rem);font-weight:700;color:#fff;margin-bottom:60px;letter-spacing:-.5px;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;}
+.stat-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:22px;padding:36px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:background .3s,transform .3s;}
+.stat-card:hover{background:rgba(255,255,255,.09);transform:translateY(-5px);}
+.stat-icon{font-size:2.2rem;}
+.stat-number{font-family:'Space Grotesk',sans-serif;font-size:3.2rem;font-weight:700;color:var(--gold);line-height:1;}
+.stat-label{font-size:.8rem;color:rgba(255,255,255,.55);line-height:1.5;text-align:center;}
+
+/* SEARCH BAR */
+.search-wrap{max-width:600px;margin:0 auto 48px;padding:0 8px;}
+.search-input-wrap{position:relative;}
+.search-input-wrap input{font-family:'Inter',sans-serif;font-size:.95rem;width:100%;padding:14px 20px 14px 50px;border:2px solid #e0e8e0;border-radius:50px;outline:none;background:#fff;color:var(--carbon);transition:border-color .2s,box-shadow .2s;}
+.search-input-wrap input:focus{border-color:var(--moss);box-shadow:0 0 0 4px rgba(47,94,78,.1);}
+.search-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:1.1rem;pointer-events:none;}
+.no-results{text-align:center;padding:48px 20px;color:var(--muted);font-size:.97rem;display:none;}
+
+/* GALLERY */
+.gallery-section{max-width:1320px;margin:0 auto;padding:80px 28px;}
+.section-header{text-align:center;margin-bottom:56px;}
+.section-header h2{font-family:'Poppins',sans-serif;font-size:clamp(1.8rem,5vw,3.2rem);font-weight:800;color:var(--forest);letter-spacing:-1px;margin-bottom:14px;}
+.section-desc{font-size:1rem;color:var(--muted);max-width:480px;margin:0 auto;line-height:1.65;}
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:30px;}
+.gallery-card{background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 4px 24px rgba(22,58,47,.07);cursor:pointer;transition:box-shadow .3s;transform-style:preserve-3d;}
+.gallery-card:hover{box-shadow:0 18px 52px rgba(22,58,47,.16);}
+.card-photo{position:relative;height:224px;overflow:hidden;}
+.card-photo img{width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.25,.46,.45,.94);display:block;}
+.gallery-card:hover .card-photo img{transform:scale(1.09);}
+.card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(22,58,47,.82) 0%,transparent 55%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:18px 20px;}
+.gallery-card:hover .card-overlay{opacity:1;}
+.card-overlay-label{font-family:'Poppins',sans-serif;font-size:.82rem;font-weight:600;color:#fff;}
+.card-credit{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.48);color:#fff;font-size:.67rem;padding:4px 10px;border-radius:20px;backdrop-filter:blur(6px);}
+.card-visits{position:absolute;top:12px;left:12px;background:rgba(22,58,47,.7);color:#fff;font-size:.67rem;padding:4px 10px;border-radius:20px;backdrop-filter:blur(6px);display:flex;align-items:center;gap:4px;}
+.card-body{padding:20px 22px 22px;}
+.card-title{font-family:'Poppins',sans-serif;font-size:1rem;font-weight:700;color:var(--forest);margin-bottom:6px;}
+.card-species{font-size:.82rem;color:var(--muted);margin-bottom:16px;line-height:1.4;font-style:italic;}
+.card-species strong{color:var(--moss);font-style:normal;}
+.card-footer{display:flex;align-items:center;justify-content:space-between;}
+.card-disc{font-size:.73rem;font-weight:600;color:var(--muted);background:var(--sand);padding:4px 11px;border-radius:20px;display:flex;align-items:center;gap:4px;}
+.btn-explore{font-family:'Poppins',sans-serif;font-size:.8rem;font-weight:600;padding:9px 18px;background:var(--forest);color:#fff;border:none;border-radius:50px;cursor:pointer;transition:all .2s;}
+.btn-explore:hover{background:var(--moss);transform:translateY(-2px);}
+
+/* MAP */
+#map{min-height:100vh;background:var(--carbon);}
+.map-hero{background:var(--forest);padding:88px 40px 60px;text-align:center;position:relative;overflow:hidden;}
+.map-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(47,94,78,.65) 0%,transparent 70%);}
+.map-hero .eyebrow,.map-hero h2,.map-hero p{position:relative;}
+.map-hero h2{font-family:'Poppins',sans-serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:#fff;letter-spacing:-1.5px;margin-bottom:12px;}
+.map-hero p{font-size:1rem;color:rgba(255,255,255,.7);max-width:480px;margin:0 auto;line-height:1.65;}
+#mapContainer{height:calc(100vh - 280px);min-height:500px;width:100%;}
+.map-marker-wrap{width:50px;height:50px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#fff;border:3px solid var(--gold);overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+.map-marker-wrap img{width:100%;height:100%;object-fit:cover;transform:rotate(45deg);}
+.map-popup-inner{width:200px;}
+.map-popup-inner img{width:100%;height:130px;object-fit:cover;border-radius:10px;margin-bottom:10px;display:block;}
+.mp-title{font-family:'Poppins',sans-serif;font-weight:700;font-size:.9rem;color:var(--forest);margin-bottom:4px;}
+.mp-info{font-size:.73rem;color:var(--muted);margin-bottom:3px;}
+.mp-btn{font-family:'Poppins',sans-serif;font-size:.78rem;font-weight:600;padding:7px 14px;background:var(--gold);color:var(--forest);border:none;border-radius:20px;cursor:pointer;margin-top:8px;width:100%;transition:all .2s;}
+.mp-btn:hover{background:var(--gold-l);}
+.leaflet-popup-content-wrapper{border-radius:16px!important;padding:0!important;overflow:hidden;}
+.leaflet-popup-content{margin:0!important;padding:14px!important;}
+.leaflet-container a.leaflet-popup-close-button{color:var(--muted)!important;}
+
+/* TAXONOMY */
+#taxonomy{min-height:100vh;background:var(--ivory);}
+.taxo-hero{background:var(--forest);padding:88px 40px 60px;text-align:center;position:relative;overflow:hidden;}
+.taxo-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(47,94,78,.6) 0%,transparent 70%);}
+.taxo-hero .eyebrow,.taxo-hero h2,.taxo-hero p{position:relative;}
+.taxo-hero h2{font-family:'Poppins',sans-serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:#fff;letter-spacing:-1.5px;margin-bottom:12px;}
+.taxo-hero p{font-size:1rem;color:rgba(255,255,255,.7);max-width:480px;margin:0 auto;line-height:1.65;}
+.taxo-body{max-width:1200px;margin:0 auto;padding:64px 28px 88px;}
+.taxo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:24px;}
+.taxo-card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 4px 18px rgba(22,58,47,.07);cursor:pointer;transition:transform .3s,box-shadow .3s;}
+.taxo-card:hover{transform:translateY(-6px);box-shadow:0 14px 40px rgba(22,58,47,.16);}
+.taxo-card-img{height:170px;overflow:hidden;}
+.taxo-card-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s;}
+.taxo-card:hover .taxo-card-img img{transform:scale(1.08);}
+.taxo-card-body{padding:16px 18px 18px;}
+.taxo-sci{font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:700;color:var(--forest);font-style:italic;margin-bottom:4px;}
+.taxo-meta{font-size:.74rem;color:var(--muted);}
+.taxo-empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:.97rem;max-width:480px;margin:0 auto;line-height:1.7;}
+.taxo-loading-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(212,169,79,.12);color:var(--moss);font-size:.73rem;padding:3px 10px;border-radius:20px;margin-top:6px;}
+
+/* TAXONOMY OVERLAY/POPUP */
+.taxo-overlay{position:fixed;inset:0;background:rgba(22,58,47,.75);z-index:900;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
+.taxo-popup{background:#fff;border-radius:24px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:popIn .35s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{from{transform:scale(.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+.taxo-popup-close{position:absolute;top:16px;right:16px;background:rgba(0,0,0,.08);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--muted);z-index:2;transition:background .2s;}
+.taxo-popup-close:hover{background:rgba(0,0,0,.15);}
+.taxo-popup-img{height:260px;overflow:hidden;border-radius:24px 24px 0 0;}
+.taxo-popup-img img{width:100%;height:100%;object-fit:cover;}
+.taxo-popup-body{padding:28px 32px 32px;}
+.taxo-popup-sci{font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:800;color:var(--forest);font-style:italic;margin-bottom:6px;}
+.taxo-popup-common{font-size:.95rem;color:var(--muted);margin-bottom:24px;}
+.taxo-tree{display:flex;flex-direction:column;gap:0;}
+.taxo-rank{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;}
+.taxo-rank:last-child{border-bottom:none;}
+.taxo-rank-label{font-family:'Space Grotesk',sans-serif;font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);width:100px;flex-shrink:0;}
+.taxo-rank-value{font-size:.92rem;font-weight:600;color:var(--forest);}
+.taxo-popup-from{margin-top:18px;font-size:.8rem;color:var(--muted);background:var(--sand);padding:8px 14px;border-radius:10px;}
+.taxo-fetching{padding:40px;text-align:center;color:var(--muted);}
+.taxo-fetch-err{padding:20px;text-align:center;color:#c0392b;font-size:.88rem;}
+.taxo-rank-italic{font-style:italic;letter-spacing:.3px;}
+.taxo-popup-common-name{font-size:1.05rem;color:var(--moss);font-weight:600;margin-bottom:20px;}
+.taxo-popup-photo-ref{font-size:.78rem;color:var(--muted);background:var(--sand);padding:7px 14px;border-radius:10px;margin-top:18px;display:inline-block;}
+.taxo-card-common{font-size:.78rem;color:var(--moss);font-weight:600;margin-bottom:4px;}
+
+/* QUIZ */
+#quiz{min-height:100vh;background:var(--ivory);}
+.quiz-hero{background:linear-gradient(135deg,var(--forest) 0%,var(--moss) 100%);padding:88px 40px 60px;text-align:center;position:relative;overflow:hidden;}
+.quiz-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 30%,rgba(212,169,79,.2) 0%,transparent 60%);}
+.quiz-hero .eyebrow,.quiz-hero h2,.quiz-hero p{position:relative;}
+.quiz-hero h2{font-family:'Poppins',sans-serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:800;color:#fff;letter-spacing:-1.5px;margin-bottom:12px;}
+.quiz-hero p{font-size:1rem;color:rgba(255,255,255,.7);max-width:480px;margin:0 auto;line-height:1.65;}
+.quiz-body{max-width:700px;margin:0 auto;padding:60px 24px 88px;}
+.quiz-score-bar{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:16px;padding:16px 24px;box-shadow:0 2px 16px rgba(22,58,47,.06);margin-bottom:32px;}
+.quiz-score-bar span{font-family:'Space Grotesk',sans-serif;font-size:.9rem;color:var(--muted);}
+.quiz-score-bar strong{color:var(--forest);font-weight:700;}
+.quiz-not-ready{background:#fff;border-radius:20px;padding:48px 32px;text-align:center;box-shadow:0 2px 16px rgba(22,58,47,.06);}
+.quiz-not-ready .qnr-icon{font-size:3rem;margin-bottom:16px;}
+.quiz-not-ready h3{font-family:'Poppins',sans-serif;font-size:1.2rem;font-weight:700;color:var(--forest);margin-bottom:10px;}
+.quiz-not-ready p{font-size:.9rem;color:var(--muted);line-height:1.65;}
+.quiz-card{background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 4px 24px rgba(22,58,47,.1);}
+.quiz-photo{width:100%;height:320px;object-fit:cover;display:block;}
+.quiz-card-body{padding:28px 32px 32px;}
+.quiz-question{font-family:'Poppins',sans-serif;font-size:1.15rem;font-weight:700;color:var(--forest);margin-bottom:22px;text-align:center;}
+.quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.quiz-opt{font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:600;padding:14px 16px;background:var(--sand);color:var(--forest);border:2px solid transparent;border-radius:14px;cursor:pointer;transition:all .2s;text-align:center;}
+.quiz-opt:hover:not(.answered){background:rgba(22,58,47,.08);border-color:rgba(22,58,47,.15);}
+.quiz-opt.correct{background:rgba(76,175,111,.15);border-color:#4caf6f;color:#163a2f;}
+.quiz-opt.wrong{background:rgba(255,80,80,.1);border-color:#e74c3c;color:#c0392b;}
+.quiz-opt.show-correct{background:rgba(76,175,111,.1);border-color:#4caf6f;}
+.quiz-feedback{text-align:center;font-family:'Poppins',sans-serif;font-size:.95rem;font-weight:600;margin-bottom:20px;padding:12px;border-radius:12px;}
+.quiz-feedback.right{background:rgba(76,175,111,.12);color:#2e7d4f;}
+.quiz-feedback.wrong-fb{background:rgba(255,80,80,.1);color:#c0392b;}
+.btn-next-quiz{font-family:'Poppins',sans-serif;font-size:.95rem;font-weight:600;padding:13px 28px;background:var(--gold);color:var(--forest);border:none;border-radius:50px;cursor:pointer;transition:all .25s;display:block;margin:0 auto;}
+.btn-next-quiz:hover{background:var(--gold-l);transform:translateY(-2px);}
+
+/* DETAIL */
+#detail{background:var(--ivory);min-height:100vh;}
+.detail-hero{position:relative;height:82vh;overflow:hidden;}
+.detail-hero img{width:100%;height:100%;object-fit:cover;display:block;}
+.detail-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(22,58,47,.15) 0%,rgba(22,58,47,.78) 100%);}
+.detail-back{position:absolute;top:70px;left:36px;z-index:10;font-family:'Inter',sans-serif;font-size:.87rem;font-weight:500;padding:10px 22px;background:rgba(255,255,255,.11);color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:50px;cursor:pointer;backdrop-filter:blur(10px);transition:all .2s;display:flex;align-items:center;gap:6px;}
+.detail-back:hover{background:rgba(255,255,255,.22);}
+.detail-hero-info{position:absolute;bottom:0;left:0;right:0;padding:48px 52px;z-index:2;}
+.detail-eyebrow{font-family:'Space Grotesk',sans-serif;font-size:.72rem;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.detail-title{font-family:'Poppins',sans-serif;font-size:clamp(1.8rem,5vw,3.2rem);font-weight:800;color:#fff;letter-spacing:-1px;margin-bottom:12px;}
+.detail-badges{display:flex;gap:8px;flex-wrap:wrap;}
+.detail-badge{display:inline-block;background:rgba(255,255,255,.13);color:rgba(255,255,255,.85);font-size:.78rem;padding:6px 16px;border-radius:20px;backdrop-filter:blur(6px);}
+.detail-body{max-width:1040px;margin:0 auto;padding:64px 28px 88px;display:grid;grid-template-columns:1fr 380px;gap:44px;align-items:start;}
+.detail-modules{display:flex;flex-direction:column;gap:18px;}
+.detail-module{background:#fff;border-radius:18px;padding:26px 28px;box-shadow:0 2px 18px rgba(22,58,47,.06);border:1px solid rgba(22,58,47,.05);opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.detail-module.visible{opacity:1;transform:none;}
+.mod-label{font-family:'Space Grotesk',sans-serif;font-size:.7rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;font-weight:500;}
+.mod-value{font-family:'Poppins',sans-serif;font-size:1.2rem;font-weight:700;color:var(--forest);margin-bottom:4px;}
+.mod-sub{font-size:.84rem;color:var(--muted);}
+.mod-empty{font-size:.88rem;color:var(--muted);font-style:italic;}
+.detail-sidebar{position:sticky;top:72px;}
+.disc-heading{font-family:'Poppins',sans-serif;font-size:.97rem;font-weight:700;color:var(--forest);margin-bottom:16px;}
+.btn-contribute{font-family:'Poppins',sans-serif;font-weight:600;font-size:.88rem;padding:13px 22px;background:var(--gold);color:var(--forest);border:none;border-radius:50px;cursor:pointer;transition:all .22s;width:100%;margin-bottom:16px;}
+.btn-contribute:hover{background:var(--gold-l);transform:translateY(-2px);}
+.cf-wrap{background:#fff;border-radius:18px;padding:22px;box-shadow:0 2px 18px rgba(22,58,47,.06);display:none;margin-bottom:16px;}
+.cf-wrap.open{display:block;animation:fadeUp .3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
+.cf-wrap h4{font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:600;color:var(--forest);margin-bottom:14px;}
+.cf-wrap input,.cf-wrap textarea{font-family:'Inter',sans-serif;font-size:.87rem;width:100%;padding:10px 14px;border:1.5px solid #e0e8e0;border-radius:12px;outline:none;background:var(--ivory);color:var(--carbon);margin-bottom:8px;transition:border-color .2s;}
+.cf-wrap input:focus,.cf-wrap textarea:focus{border-color:var(--moss);}
+.cf-wrap textarea{resize:vertical;min-height:72px;}
+.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cf-actions{display:flex;gap:8px;margin-top:4px;}
+.btn-save{font-family:'Poppins',sans-serif;font-size:.85rem;font-weight:600;padding:9px 18px;background:var(--moss);color:#fff;border:none;border-radius:50px;cursor:pointer;transition:all .2s;flex:1;}
+.btn-save:hover{background:var(--forest);}
+.btn-ccancel{font-family:'Inter',sans-serif;font-size:.85rem;padding:9px 14px;background:#f0f0f0;color:#666;border:none;border-radius:50px;cursor:pointer;}
+.disc-list{display:flex;flex-direction:column;gap:12px;max-height:52vh;overflow-y:auto;padding-right:4px;}
+.disc-list::-webkit-scrollbar{width:4px;}
+.disc-list::-webkit-scrollbar-thumb{background:var(--sand);border-radius:4px;}
+.disc-card{background:#fff;border-radius:14px;padding:15px 17px;box-shadow:0 2px 12px rgba(22,58,47,.05);border-left:3px solid var(--gold);}
+.dc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.dc-name{font-weight:700;font-size:.82rem;color:var(--forest);}
+.dc-date{font-size:.68rem;color:var(--muted);}
+.dc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px;}
+.dc-tag{font-size:.71rem;font-weight:600;padding:2px 8px;border-radius:6px;}
+.tag-a{background:rgba(255,111,79,.1);color:#c0392b;}
+.tag-s{background:rgba(33,150,243,.1);color:#1565c0;}
+.tag-h{background:rgba(156,39,176,.1);color:#6a1b9a;}
+.tag-d{background:rgba(76,175,111,.1);color:#2e7d4f;}
+.dc-text{font-size:.83rem;color:#4a5a4a;line-height:1.5;margin-bottom:6px;}
+.dc-fact{font-size:.8rem;background:rgba(212,169,79,.1);color:#7a5a1a;border-radius:8px;padding:7px 10px;margin-bottom:6px;display:flex;align-items:flex-start;gap:6px;line-height:1.45;}
+.dc-vote{display:flex;align-items:center;gap:6px;margin-top:8px;}
+.btn-vote{font-family:'Inter',sans-serif;font-size:.75rem;font-weight:600;padding:5px 12px;background:var(--sand);border:1.5px solid #e0d8c0;border-radius:20px;cursor:pointer;color:var(--earth, #7a5a1a);transition:all .2s;display:flex;align-items:center;gap:4px;}
+.btn-vote:hover:not(.voted){background:rgba(212,169,79,.2);border-color:var(--gold);}
+.btn-vote.voted{background:rgba(212,169,79,.15);border-color:var(--gold);color:var(--gold);}
+.vote-count{font-size:.75rem;color:var(--muted);}
+.no-disc{text-align:center;padding:26px 16px;background:#fff;border-radius:14px;color:var(--muted);font-size:.87rem;}
+
+/* PUZZLE = LABORATORIO */
+#puzzle{min-height:100vh;background:var(--ivory);}
+.lab-hero{background:var(--forest);padding:88px 40px 68px;text-align:center;position:relative;overflow:hidden;}
+.lab-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(47,94,78,.65) 0%,transparent 70%);}
+.lab-hero .eyebrow,.lab-hero h2,.lab-hero p{position:relative;}
+.lab-hero h2{font-family:'Poppins',sans-serif;font-size:clamp(2rem,5vw,3.8rem);font-weight:800;color:#fff;letter-spacing:-1.5px;margin-bottom:12px;}
+.lab-hero p{font-size:1rem;color:rgba(255,255,255,.68);max-width:480px;margin:0 auto;line-height:1.65;}
+.lab-body{max-width:1100px;margin:0 auto;padding:60px 28px 88px;}
+.lab-strip-header{font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:700;color:var(--forest);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.thumb-strip{display:flex;gap:14px;overflow-x:auto;padding:6px 4px 16px;margin-bottom:24px;scrollbar-width:thin;scrollbar-color:var(--sand) transparent;}
+.thumb-strip::-webkit-scrollbar{height:5px;}
+.thumb-strip::-webkit-scrollbar-thumb{background:var(--sand);border-radius:4px;}
+.p-thumb{flex-shrink:0;width:155px;border-radius:14px;overflow:hidden;cursor:pointer;border:3px solid transparent;transition:all .25s;box-shadow:0 3px 12px rgba(0,0,0,.1);background:#f0f0f0;}
+.p-thumb:hover{border-color:var(--gold);transform:translateY(-4px);box-shadow:0 8px 20px rgba(0,0,0,.15);}
+.p-thumb.selected{border-color:var(--gold);box-shadow:0 0 0 4px rgba(212,169,79,.3);transform:translateY(-4px);}
+.p-thumb img{width:155px;height:115px;object-fit:cover;display:block;}
+.p-thumb span{font-size:.72rem;padding:7px 10px;display:block;color:var(--forest);font-weight:600;text-align:center;background:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lab-main{background:#fff;border-radius:18px;padding:28px;box-shadow:0 2px 18px rgba(22,58,47,.06);}
+.lab-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #f0f0f0;}
+.lab-controls label{font-family:'Poppins',sans-serif;font-weight:600;font-size:.84rem;color:var(--forest);}
+.lab-controls select{font-family:'Inter',sans-serif;padding:9px 16px;border:1.5px solid #e0e8e0;border-radius:10px;outline:none;background:var(--ivory);font-size:.84rem;cursor:pointer;}
+.lab-stat{display:flex;align-items:center;gap:6px;background:var(--sand);border-radius:10px;padding:7px 14px;font-family:'Space Grotesk',sans-serif;font-size:.82rem;font-weight:500;color:var(--moss);}
+.lab-stat strong{color:var(--forest);font-weight:700;}
+.btn-lab{font-family:'Poppins',sans-serif;font-size:.84rem;font-weight:600;padding:9px 22px;border:none;border-radius:50px;cursor:pointer;transition:all .2s;}
+.btn-lab-go{background:var(--gold);color:var(--forest);}.btn-lab-go:hover{background:var(--gold-l);transform:translateY(-2px);}
+.btn-lab-rst{background:#f0f0f0;color:#555;}.btn-lab-rst:hover{background:#e0e0e0;}
+#puzzleArea{position:relative;width:480px;height:480px;background:linear-gradient(135deg,#eef5ec,#f4faf4);border-radius:16px;border:2px solid rgba(22,58,47,.09);overflow:hidden;margin:0 auto;}
+.pz-status-bar{display:flex;align-items:center;justify-content:center;margin-top:20px;min-height:52px;}
+.pz-status{font-family:'Inter',sans-serif;font-size:.9rem;color:var(--muted);text-align:center;}
+.win-screen{display:inline-flex;flex-direction:column;align-items:center;gap:4px;background:linear-gradient(135deg,var(--forest),var(--moss));color:#fff;padding:16px 32px;border-radius:18px;animation:popIn2 .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn2{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
+.win-title{font-family:'Poppins',sans-serif;font-size:1.05rem;font-weight:700;}
+.win-sub{font-size:.82rem;opacity:.82;}
+@keyframes cfFall{to{transform:translateY(115vh) rotate(var(--rot,720deg));opacity:0;}}
+
+/* ABOUT */
+.about-wrap{min-height:100vh;background:var(--ivory);padding:112px 28px 88px;}
+.about-inner{max-width:700px;margin:0 auto;}
+.about-inner h2{font-family:'Poppins',sans-serif;font-size:clamp(2rem,5vw,3rem);font-weight:800;color:var(--forest);margin-bottom:24px;letter-spacing:-.5px;}
+.about-inner p{line-height:1.82;color:#4a5a4a;margin-bottom:18px;font-size:.97rem;}
+.about-box{background:#fff;border-radius:18px;padding:26px 28px;margin-top:24px;box-shadow:0 2px 18px rgba(22,58,47,.06);}
+.about-box h3{font-family:'Poppins',sans-serif;font-weight:700;color:var(--forest);margin-bottom:12px;font-size:.97rem;}
+.about-box ol{padding-left:20px;color:#4a5a4a;line-height:2.2;font-size:.92rem;}
+.about-box code{background:var(--sand);padding:2px 7px;border-radius:5px;font-size:.84rem;color:var(--moss);}
+.folder-tree{font-family:'Space Grotesk',monospace;font-size:.86rem;background:var(--forest);color:rgba(255,255,255,.82);padding:22px 26px;border-radius:12px;line-height:2.1;margin-top:14px;}
+.folder-tree .fg{color:var(--gold);}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;right:24px;z-index:998;background:var(--forest);color:#fff;padding:13px 22px;border-radius:14px;font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:500;box-shadow:0 8px 28px rgba(0,0,0,.24);transform:translateY(120px);opacity:0;transition:all .3s ease;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
+.reveal.visible{opacity:1;transform:none;}
+
+/* BOTTOM NAV */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:400;background:rgba(22,58,47,.96);backdrop-filter:blur(18px);padding:6px 0 12px;border-top:1px solid rgba(255,255,255,.07);justify-content:space-around;}
+.bottom-nav button{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:rgba(255,255,255,.55);font-size:.58rem;font-family:'Inter',sans-serif;cursor:pointer;padding:4px 10px;transition:color .2s;}
+.bottom-nav button .bni{font-size:1.35rem;}
+.bottom-nav button.active{color:var(--gold);}
+
+/* RESPONSIVE */
+@media(max-width:1000px){.stats-grid{grid-template-columns:repeat(2,1fr);}.detail-body{grid-template-columns:1fr;}.detail-sidebar{position:static;}}
+@media(max-width:768px){#topNav{display:none;}.bottom-nav{display:flex;}.toast{bottom:90px;}.gallery-grid,.taxo-grid{grid-template-columns:1fr;}.impact-section,.lab-hero,.map-hero,.taxo-hero,.quiz-hero{padding-left:24px;padding-right:24px;}.detail-hero-info{padding:24px 24px;}.detail-back{top:14px;left:14px;}.quiz-options{grid-template-columns:1fr;}.cf-row{grid-template-columns:1fr;}}
+@media(max-width:520px){#puzzleArea{transform:scale(.72);transform-origin:top center;margin-bottom:-130px;}.hero-btns{flex-direction:column;align-items:center;}.stat-number{font-size:2.4rem;}}
+
+/* DECORATIVE HERO IMAGES */
+.hero-deco-img{
+  position:absolute;right:0;top:0;width:55%;height:100%;
+  object-fit:cover;opacity:.1;pointer-events:none;user-select:none;
+  -webkit-mask-image:linear-gradient(to left, rgba(0,0,0,.7) 0%, transparent 65%);
+  mask-image:linear-gradient(to left, rgba(0,0,0,.7) 0%, transparent 65%);
+}
+
+/* ABOUT SECTION REDESIGN */
+.about-wrap{min-height:100vh;background:var(--ivory);padding:100px 28px 88px;}
+.about-inner{max-width:760px;margin:0 auto;}
+.about-bird-wrap{position:relative;margin-bottom:10px;}
+.about-bird-deco{position:absolute;right:-40px;top:-60px;width:200px;opacity:.07;pointer-events:none;user-select:none;transform:scaleX(-1);}
+.about-intro{font-size:1.08rem;font-weight:500;color:var(--forest);line-height:1.85;margin-bottom:18px;border-left:4px solid var(--gold);padding-left:20px;}
+.about-divider{display:flex;align-items:center;gap:14px;margin:28px 0;color:var(--gold);font-size:.75rem;letter-spacing:2px;text-transform:uppercase;font-family:'Space Grotesk',sans-serif;}
+.about-divider::before,.about-divider::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,rgba(212,169,79,.4),transparent);}
+.about-field{background:#fff;border-radius:18px;padding:28px 30px;margin-bottom:16px;box-shadow:0 2px 18px rgba(22,58,47,.06);}
+.about-field-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.about-field-icon{font-size:1.4rem;}
+.about-field-label{font-family:'Poppins',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);}
+.about-field p{font-size:.95rem;line-height:1.82;color:#3d4d3d;margin-bottom:0;}
+.about-credits{background:linear-gradient(135deg,rgba(22,58,47,.05),rgba(212,169,79,.07));border:1px solid rgba(212,169,79,.28);border-radius:18px;padding:26px 30px;margin-top:24px;}
+.about-credits-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.about-credits-title{font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:700;color:var(--forest);}
+.about-credits p{font-size:.88rem;line-height:1.82;color:#4a5a4a;margin-bottom:0;}
+.about-credits strong{color:var(--forest);}
+.about-box{background:#fff;border-radius:18px;padding:26px 28px;margin-top:20px;box-shadow:0 2px 18px rgba(22,58,47,.06);}
+.about-box h3{font-family:'Poppins',sans-serif;font-weight:700;color:var(--forest);margin-bottom:12px;font-size:.97rem;}
+.about-box ol{padding-left:20px;color:#4a5a4a;line-height:2.2;font-size:.92rem;}
+.about-box code{background:var(--sand);padding:2px 7px;border-radius:5px;font-size:.84rem;color:var(--moss);}
+.folder-tree{font-family:'Space Grotesk',monospace;font-size:.86rem;background:var(--forest);color:rgba(255,255,255,.82);padding:22px 26px;border-radius:12px;line-height:2.1;margin-top:14px;}
+.folder-tree .fg{color:var(--gold);}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav id="topNav">
+  <div class="nav-logo">🌿 <span class="gold">Exploradores</span> de Animales</div>
+  <div class="nav-links">
+    <button class="active" onclick="showSection('gallery')">Colección</button>
+    <button onclick="showSection('map')">Mapa</button>
+    <button onclick="showSection('taxonomy')">Taxonomía</button>
+    <button onclick="showSection('quiz')">Quiz</button>
+    <button onclick="showSection('puzzle')">Laboratorio</button>
+    <button onclick="showSection('about')">Proyecto</button>
+  </div>
+</nav>
+
+<!-- GALLERY (hero + impact + search + grid) -->
+<section id="gallery" class="section active">
+  <div class="hero-wrap" id="heroWrap">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content" id="heroContent">
+      <p class="eyebrow">Una expedición fotográfica colaborativa</p>
+      <h1>Exploradores<br>de Animales</h1>
+      <p class="hero-sub">La naturaleza vista a través de los ojos de una nueva generación</p>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="document.getElementById('galleryAnchor').scrollIntoView({behavior:'smooth'})">Explorar Colección</button>
+        <button class="btn-secondary" onclick="showSection('puzzle')">Iniciar Expedición</button>
+      </div>
+    </div>
+    <div class="scroll-hint"><div class="scroll-dot"></div></div>
+  </div>
+  <div class="impact-section reveal" id="impactSection">
+    <div class="impact-inner">
+      <p class="eyebrow" style="color:var(--gold);margin-bottom:14px;">El alcance de la misión</p>
+      <h2>Juntos construimos el conocimiento</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><span class="stat-icon">📸</span><span class="stat-number" id="sPhotos">0</span><span class="stat-label">Fotografías registradas</span></div>
+        <div class="stat-card"><span class="stat-icon">🐾</span><span class="stat-number" id="sSpecies">0</span><span class="stat-label">Especies identificadas</span></div>
+        <div class="stat-card"><span class="stat-icon">👧</span><span class="stat-number" id="sExplorers">0</span><span class="stat-label">Jóvenes exploradores</span></div>
+        <div class="stat-card"><span class="stat-icon">💬</span><span class="stat-number" id="sDisc">0</span><span class="stat-label">Descubrimientos compartidos</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="gallery-section" id="galleryAnchor">
+    <div class="section-header reveal">
+      <p class="eyebrow" style="color:var(--moss);margin-bottom:12px;">Colección fotográfica</p>
+      <h2>La Expedición</h2>
+      <p class="section-desc">Cada fotografía es un misterio por resolver. ¿Reconoces estas especies?</p>
+    </div>
+    <div class="search-wrap reveal">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="searchInput" placeholder="Buscar por animal, especie o hábitat..." oninput="filterGallery()">
+      </div>
+    </div>
+    <div class="gallery-grid" id="galleryGrid"></div>
+    <div class="no-results" id="noResults">Sin resultados para tu búsqueda. Intenta con otro término.</div>
+  </div>
+</section>
+
+<!-- MAP -->
+<section id="map" class="section">
+  <div class="map-hero">
+    <img class="hero-deco-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Colibri-thalassinus-001.jpg/960px-Colibri-thalassinus-001.jpg" alt="" aria-hidden="true" onerror="this.style.display='none'">
+    <p class="eyebrow">La expedición en el territorio</p>
+    <h2>Mapa de Habana Vieja</h2>
+    <p>Descubre dónde fueron tomadas cada una de las fotografías de la expedición.</p>
+  </div>
+  <div id="mapContainer"></div>
+</section>
+
+<!-- TAXONOMY -->
+<section id="taxonomy" class="section">
+  <div class="taxo-hero">
+    <img class="hero-deco-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Pieris_rapae_20100705_cropped.JPG/960px-Pieris_rapae_20100705_cropped.JPG" alt="" aria-hidden="true" onerror="this.style.display='none'">
+    <p class="eyebrow">Clasificación científica</p>
+    <h2>Enciclopedia de Especies</h2>
+    <p>Cada especie identificada por la comunidad con su clasificación taxonómica completa.</p>
+  </div>
+  <div class="taxo-body">
+    <div class="taxo-grid" id="taxoGrid"></div>
+  </div>
+</section>
+
+<!-- TAXONOMY POPUP -->
+<div class="taxo-overlay" id="taxoOverlay" onclick="closeTaxoPopup(event)">
+  <div class="taxo-popup" id="taxoPopup">
+    <button class="taxo-popup-close" onclick="closeTaxoPopup()">✕</button>
+    <div id="taxoContent"></div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<section id="quiz" class="section">
+  <div class="quiz-hero">
+    <img class="hero-deco-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/A_Dragonfly_Resting_On_A_Twig.jpg/960px-A_Dragonfly_Resting_On_A_Twig.jpg" alt="" aria-hidden="true" onerror="this.style.display='none'">
+    <p class="eyebrow">Modo Explorador</p>
+    <h2>Quiz de Especies</h2>
+    <p>¿Cuántas especies de la expedición puedes identificar?</p>
+  </div>
+  <div class="quiz-body">
+    <div class="quiz-score-bar">
+      <span>✅ <strong id="qCorrect">0</strong> correctas</span>
+      <span>📋 Total: <strong id="qTotal">0</strong></span>
+      <span>🎯 <strong id="qPct">0%</strong></span>
+    </div>
+    <div id="quizContainer"></div>
+  </div>
+</section>
+
+<!-- DETAIL -->
+<section id="detail" class="section">
+  <div class="detail-hero">
+    <img id="detailImg" src="" alt="">
+    <div class="detail-hero-overlay"></div>
+    <button class="detail-back" onclick="goBack()">← Volver</button>
+    <div class="detail-hero-info">
+      <p class="detail-eyebrow">Ficha de especie</p>
+      <h1 class="detail-title" id="detailTitle"></h1>
+      <div class="detail-badges">
+        <span class="detail-badge" id="detailCredit"></span>
+        <span class="detail-badge" id="detailVisits"></span>
+      </div>
+    </div>
+  </div>
+  <div class="detail-body">
+    <div class="detail-modules" id="detailModules"></div>
+    <div class="detail-sidebar">
+      <div class="disc-heading">💬 Descubrimientos <span id="discCount"></span></div>
+      <button class="btn-contribute" onclick="toggleCF()">✏️ Aportar descubrimiento</button>
+      <div class="cf-wrap" id="cfWrap">
+        <h4>¿Qué sabes sobre este animal?</h4>
+        <input type="text" placeholder="Tu nombre (opcional)" id="cf_name">
+        <div class="cf-row">
+          <input type="text" placeholder="Nombre del animal 🐾" id="cf_animal">
+          <input type="text" placeholder="Especie 🔬" id="cf_species">
+        </div>
+        <div class="cf-row">
+          <input type="text" placeholder="Hábitat 🌍" id="cf_habitat">
+          <input type="text" placeholder="Alimentación 🌿" id="cf_diet">
+        </div>
+        <textarea placeholder="Descripción, comportamiento, datos..." id="cf_comment"></textarea>
+        <textarea placeholder="💡 Dato curioso (opcional)..." id="cf_fact" style="min-height:60px;"></textarea>
+        <div class="cf-actions">
+          <button class="btn-save" onclick="submitDisc()">✅ Publicar</button>
+          <button class="btn-ccancel" onclick="toggleCF()">Cancelar</button>
+        </div>
+      </div>
+      <div class="disc-list" id="discList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- PUZZLE / LABORATORIO -->
+<section id="puzzle" class="section">
+  <div class="lab-hero">
+    <img class="hero-deco-img" src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Catt_orchid.jpg/960px-Catt_orchid.jpg" alt="" aria-hidden="true" onerror="this.style.display='none'">
+    <p class="eyebrow">Laboratorio de Observación</p>
+    <h2>Reconstruye la Especie</h2>
+    <p>Cada pieza revela un fragmento de la naturaleza. Reconstruye la imagen para estudiar la especie.</p>
+  </div>
+  <div class="lab-body">
+    <div class="lab-main">
+      <div class="lab-strip-header">📸 Elige una fotografía para el rompecabezas</div>
+      <div class="thumb-strip" id="thumbList"></div>
+      <div class="lab-controls">
+        <label>Nivel:</label>
+        <select id="diffSel">
+          <option value="2">⭐ Explorador — 4 piezas</option>
+          <option value="3" selected>⭐⭐ Científico — 9 piezas</option>
+          <option value="4">⭐⭐⭐ Experto — 16 piezas</option>
+          <option value="5">⭐⭐⭐⭐ Maestro — 25 piezas</option>
+        </select>
+        <div class="lab-stat">⏱ <strong id="timerDisp">00:00</strong></div>
+        <div class="lab-stat">↔ <strong id="movCnt">0</strong> mov.</div>
+        <button class="btn-lab btn-lab-go" onclick="startPuzzle()">▶ Iniciar</button>
+        <button class="btn-lab btn-lab-rst" onclick="startPuzzle()">↺</button>
+      </div>
+      <div id="puzzleArea"></div>
+      <div class="pz-status-bar"><div class="pz-status" id="pStatus">← Selecciona una fotografía e inicia</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="section">
+  <div class="about-wrap">
+    <div class="about-inner">
+
+      <!-- Encabezado con colibrí decorativo -->
+      <div class="about-bird-wrap">
+        <img class="about-bird-deco" src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Colibri-thalassinus-001.jpg/480px-Colibri-thalassinus-001.jpg" alt="" aria-hidden="true" onerror="this.style.display='none'">
+        <p class="eyebrow" style="color:var(--moss);font-size:.75rem;letter-spacing:3.5px;text-transform:uppercase;font-family:'Space Grotesk',sans-serif;margin-bottom:14px;">La misión</p>
+        <h2 style="font-family:'Poppins',sans-serif;font-size:clamp(2rem,5vw,3rem);font-weight:800;color:var(--forest);margin-bottom:24px;letter-spacing:-.5px;">Acerca del Proyecto</h2>
+      </div>
+
+      <!-- Párrafos de concepto -->
+      <p class="about-intro"><strong>Exploradores de Animales</strong> es una plataforma colaborativa donde las fotografías son tomadas por niños y niñas apasionados por la naturaleza. Cada imagen es un misterio que la comunidad ayuda a resolver.</p>
+      <p style="line-height:1.82;color:#4a5a4a;margin-bottom:18px;font-size:.97rem;">Al igual que Wikipedia, el conocimiento se construye entre todos. Si reconoces una especie, comparte lo que sabes. Juntos creamos la primera enciclopedia visual de fauna capturada por jóvenes exploradores. 🦋</p>
+
+      <div class="about-divider">La expedición</div>
+
+      <!-- Sección de campo -->
+      <div class="about-field">
+        <div class="about-field-header">
+          <span class="about-field-icon">🗺️</span>
+          <span class="about-field-label">Recorridos de campo</span>
+        </div>
+        <p>Durante dos sábados del mes de mayo, un grupo de adolescentes participantes en los <strong>Talleres de Fotografía y Cine Social del Centro a+ espacios adolescentes</strong> realizaron recorridos en el Centro Histórico, con el propósito de captar, mediante la fotografía, calles, parques, patios e instituciones que albergan abundante flora y fauna.</p>
+      </div>
+
+      <div class="about-field">
+        <div class="about-field-header">
+          <span class="about-field-icon">🔬</span>
+          <span class="about-field-label">Objetivos científicos</span>
+        </div>
+        <p>Estas exploraciones tuvieron como objetivo principal <strong>identificar especies endémicas en entornos urbanos diversos</strong> y localizar polinizadores que, en ocasiones, enfrentan condiciones adversas en estos espacios.</p>
+      </div>
+
+      <div class="about-field">
+        <div class="about-field-header">
+          <span class="about-field-icon">📽️</span>
+          <span class="about-field-label">Resultados</span>
+        </div>
+        <p>Como resultado de estas actividades, se produjeron una <strong>selección fotográfica significativa</strong>, así como un breve material audiovisual que reflejan, desde la perspectiva adolescente, una forma innovadora y comprometida de promover la conservación del entorno y el medio ambiente.</p>
+      </div>
+
+      <!-- Créditos -->
+      <div class="about-credits">
+        <div class="about-credits-header">
+          <span style="font-size:1.5rem;">🏛️</span>
+          <span class="about-credits-title">Reconocimientos y colaboradores</span>
+        </div>
+        <p>Agradecemos al <strong>Gabinete Arqueológico de la OHC</strong> por su apoyo e impulso a esta iniciativa, la cual fue presentada en conmemoración del <strong>Día Internacional de los Museos y la Fiesta de los Patios en el año 2026</strong>. Además, estos resultados forman parte del proyecto de cooperación internacional <em>"El Centro Histórico de La Habana Vieja: hacia la inclusión del urbanismo ecológico en la restauración del patrimonio"</em>, ejecutado por la <strong>OHCH y KCD ONGD</strong>, con el respaldo de la <strong>Agencia Española de Cooperación Internacional para el Desarrollo (AECID)</strong>.</p>
+      </div>
+
+      <!-- Estructura técnica -->
+      <div class="about-box" style="margin-top:28px;">
+        <h3>📁 Estructura del proyecto</h3>
+        <div class="folder-tree"><span class="fg">📁 exploradores_animales/</span><br>&nbsp;&nbsp;├── 📄 index.html<br>&nbsp;&nbsp;├── 📄 <span class="fg">mis_fotos.js</span> ← edita para agregar fotos<br>&nbsp;&nbsp;├── 📄 <span class="fg">ubicaciones.js</span> ← coordenadas exactas del mapa<br>&nbsp;&nbsp;└── 📁 fotos_animales/ ← tus imágenes aquí</div>
+      </div>
+      <div class="about-box" style="margin-top:16px;">
+        <h3>🛠️ Cómo agregar una fotografía</h3>
+        <ol>
+          <li>Copia la imagen dentro de <code>fotos_animales/</code></li>
+          <li>Abre <code>mis_fotos.js</code> con el Bloc de notas y añade un bloque</li>
+          <li>Abre <code>ubicaciones.js</code> y añade las coordenadas exactas</li>
+          <li>Guarda ambos archivos y recarga <code>index.html</code></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOBILE NAV -->
+<nav class="bottom-nav">
+  <button class="active" onclick="showSection('gallery')"><span class="bni">🖼️</span>Galería</button>
+  <button onclick="showSection('map')"><span class="bni">🗺️</span>Mapa</button>
+  <button onclick="showSection('taxonomy')"><span class="bni">🔬</span>Taxo.</button>
+  <button onclick="showSection('quiz')"><span class="bni">🎯</span>Quiz</button>
+  <button onclick="showSection('puzzle')"><span class="bni">🧩</span>Lab.</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="ubicaciones.js"></script>
+<script>
+/* ── STORAGE ── */
+function gc(id){try{return JSON.parse(localStorage.getItem('ea_'+id)||'[]');}catch{return[];}}
+function sc(id,o){const a=gc(id);a.unshift(o);localStorage.setItem('ea_'+id,JSON.stringify(a));}
+function gvis(id){return parseInt(localStorage.getItem('ea_vis_'+id)||'0');}
+function ivis(id){localStorage.setItem('ea_vis_'+id,gvis(id)+1);}
+function gvote(aid,cid){return parseInt(localStorage.getItem('ea_v_'+aid+'_'+cid)||'0');}
+function hvoted(aid,cid){return localStorage.getItem('ea_vd_'+aid+'_'+cid)==='1';}
+function addvote(aid,cid){if(hvoted(aid,cid))return false;localStorage.setItem('ea_v_'+aid+'_'+cid,gvote(aid,cid)+1);localStorage.setItem('ea_vd_'+aid+'_'+cid,'1');return true;}
+
+/* ── HERO INIT ── */
+(function(){
+  const bg=document.getElementById('heroBg');
+  if(animals&&animals.length>0)bg.style.backgroundImage='url(\''+animals[0].src+'\')';
+  window.addEventListener('scroll',function(){
+    const sy=window.scrollY;
+    document.getElementById('topNav').classList.toggle('scrolled',sy>60);
+    if(document.getElementById('gallery').classList.contains('active')){
+      bg.style.transform='translateY('+sy*.35+'px)';
+      const hc=document.getElementById('heroContent');
+      hc.style.opacity=Math.max(0,1-sy/360);hc.style.transform='translateY('+sy*.12+'px)';
+    }
+  },{passive:true});
+})();
+
+/* ── NAV ── */
+const secNavMap={gallery:0,map:1,taxonomy:2,quiz:3,puzzle:4,about:5};
+let leafletMap=null;
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const idx=secNavMap[id];
+  document.querySelectorAll('.nav-links button').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  document.querySelectorAll('.bottom-nav button').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  if(id==='gallery'){renderGallery();initReveal();}
+  if(id==='map'){if(!leafletMap)initMap();else leafletMap.invalidateSize();}
+  if(id==='taxonomy')renderTaxonomyGrid();
+  if(id==='quiz')initQuiz();
+  if(id==='puzzle')renderThumbs();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ── GALLERY ── */
+function renderGallery(){
+  const grid=document.getElementById('galleryGrid');grid.innerHTML='';
+  animals.forEach(a=>{
+    const comments=gc(a.id);
+    const first=comments.find(c=>c.animal);
+    const preview=first?'<strong>'+first.animal+'</strong>'+(first.species?' &middot; '+first.species:''):'Sin identificar &middot; ¡Sé el primero!';
+    const vis=gvis(a.id);
+    const card=document.createElement('div');card.className='gallery-card reveal';
+    card.innerHTML=
+      '<div class="card-photo">'+
+        '<img src="'+a.src+'" alt="'+a.title+'" onerror="this.src=\'https://placehold.co/640x224/163A2F/D4A94F?text=Imagen\'">'+ 
+        '<div class="card-overlay"><div class="card-overlay-label">🔍 Explorar especie &rarr;</div></div>'+
+        '<div class="card-credit">📸 '+a.photographer+'</div>'+
+        (vis>0?'<div class="card-visits">👁 '+vis+'</div>':'')+
+      '</div>'+
+      '<div class="card-body">'+
+        '<div class="card-title">'+a.title+'</div>'+
+        '<div class="card-species">'+preview+'</div>'+
+        '<div class="card-footer">'+
+          '<div class="card-disc">💬 '+comments.length+' descubrimiento'+(comments.length!==1?'s':'')+'</div>'+
+          '<button class="btn-explore">Explorar &rarr;</button>'+
+        '</div>'+
+      '</div>';
+    card.addEventListener('click',()=>openDetail(a.id));
+    card.addEventListener('mousemove',function(e){
+      const r=card.getBoundingClientRect();
+      const x=((e.clientX-r.left)/r.width-.5)*14;const y=((e.clientY-r.top)/r.height-.5)*14;
+      card.style.transform='perspective(700px) rotateY('+x+'deg) rotateX('+-y+'deg) translateY(-6px) scale(1.01)';
+    });
+    card.addEventListener('mouseleave',()=>{card.style.transform='';});
+    grid.appendChild(card);
+  });
+  calcStats();initReveal();
+}
+
+function filterGallery(){
+  const q=document.getElementById('searchInput').value.toLowerCase().trim();
+  const cards=[...document.querySelectorAll('#galleryGrid .gallery-card')];
+  let shown=0;
+  cards.forEach((card,i)=>{
+    if(i>=animals.length){card.style.display='';return;}
+    const a=animals[i];
+    if(!q){card.style.display='';shown++;return;}
+    const comments=gc(a.id);
+    const txt=[a.title,...comments.map(c=>[c.animal,c.species,c.habitat,c.comment].join(' '))].join(' ').toLowerCase();
+    if(txt.includes(q)){card.style.display='';shown++;}else card.style.display='none';
+  });
+  document.getElementById('noResults').style.display=shown===0&&q?'block':'none';
+}
+
+/* ── STATS ── */
+function animCount(el,target){
+  if(!el)return;const start=performance.now();
+  (function upd(now){const t=Math.min((now-start)/1400,1);const e=1-Math.pow(1-t,3);el.textContent=Math.floor(e*target);if(t<1)requestAnimationFrame(upd);})(start);
+}
+function calcStats(){
+  const allC=animals.flatMap(a=>gc(a.id));
+  const sp=new Set(allC.filter(c=>c.species).map(c=>c.species.trim().toLowerCase())).size;
+  const ex=new Set(animals.map(a=>a.photographer)).size;
+  animCount(document.getElementById('sPhotos'),animals.length);
+  animCount(document.getElementById('sSpecies'),sp);
+  animCount(document.getElementById('sExplorers'),ex);
+  animCount(document.getElementById('sDisc'),allC.length);
+}
+
+/* ── MAP ── */
+function initMap(){
+  const habana=[23.1360,-82.3560];
+  leafletMap=L.map('mapContainer').setView(habana,16);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains:'abcd',maxZoom:19
+  }).addTo(leafletMap);
+  animals.forEach(a=>{
+    // Prioritize ubicaciones.js, then mis_fotos.js, then random offset
+    let lat=a.lat||habana[0]+(Math.random()-.5)*.008;
+    let lng=a.lng||habana[1]+(Math.random()-.5)*.008;
+    let locationName=a.location||'';
+    let address='';
+    if(typeof ubicaciones!=='undefined'){
+      const ub=ubicaciones.find(u=>u.id===a.id);
+      if(ub){lat=ub.lat;lng=ub.lng;locationName=ub.location||locationName;address=ub.address||'';}
+    }
+    const icon=L.divIcon({
+      className:'',
+      html:'<div class="map-marker-wrap"><img src="'+a.src+'" onerror="this.style.display=\'none\'" alt="">'+'</div>',
+      iconSize:[50,50],iconAnchor:[25,50]
+    });
+    const comments=gc(a.id);
+    const identified=comments.find(c=>c.animal);
+    L.marker([lat,lng],{icon}).addTo(leafletMap).bindPopup(
+      '<div class="map-popup-inner">'+
+        '<img src="'+a.src+'" alt="'+a.title+'" onerror="this.style.display=\'none\'">'+
+        '<div class="mp-title">'+a.title+'</div>'+
+        (identified?'<div class="mp-info">🐾 '+identified.animal+'</div>':'')+
+        '<div class="mp-info">📸 '+a.photographer+'</div>'+
+        (locationName?'<div class="mp-info">📍 '+locationName+'</div>':'')+
+        (address?'<div class="mp-info" style="font-size:.68rem;color:#999;">'+address+'</div>':'')+
+        '<button class="mp-btn" onclick="openDetailFromMap('+a.id+')">Ver ficha completa →</button>'+
+      '</div>'
+    ,{maxWidth:240});
+  });
+}
+function openDetailFromMap(id){openDetail(id);}
+
+/* ── TAXONOMY ── */
+function taxoKey(sp){return 'taxo_'+sp.trim().toLowerCase().replace(/\s+/g,'_');}
+function getTaxo(sp){try{return JSON.parse(localStorage.getItem(taxoKey(sp)));}catch{return null;}}
+async function fetchAndCacheTaxo(speciesName){
+  const k=taxoKey(speciesName);
+  if(localStorage.getItem(k))return getTaxo(speciesName);
+  try{
+    const gbif=await fetch('https://api.gbif.org/v1/species/match?name='+encodeURIComponent(speciesName)+'&strict=false');
+    const gd=await gbif.json();
+    let img=null;let commonName='';
+    try{
+      const inat=await fetch('https://api.inaturalist.org/v1/taxa?q='+encodeURIComponent(speciesName)+'&rank=species&per_page=1');
+      const id2=await inat.json();
+      if(id2.results&&id2.results.length>0){
+        img=id2.results[0].default_photo?.medium_url||null;
+        commonName=id2.results[0].preferred_common_name||'';
+      }
+    }catch(e){}
+    const taxo={
+      kingdom:gd.kingdom||'Animalia',phylum:gd.phylum||'',class:gd.class||'',
+      order:gd.order||'',family:gd.family||'',genus:gd.genus||'',
+      species:gd.species||speciesName,scientificName:gd.canonicalName||speciesName,
+      commonName,matchType:gd.matchType||'NONE',confidence:gd.confidence||0,image:img,name:speciesName
+    };
+    localStorage.setItem(k,JSON.stringify(taxo));return taxo;
+  }catch(e){return null;}
+}
+
+function getAllSpecies(){
+  const map=new Map();
+  animals.forEach(a=>{
+    gc(a.id).forEach(c=>{
+      if(c.species&&!map.has(c.species.trim()))
+        map.set(c.species.trim(),{animalId:a.id,src:a.src,title:a.title});
+    });
+  });
+  return map;
+}
+
+function renderTaxonomyGrid(){
+  const container=document.getElementById('taxoGrid');container.innerHTML='';
+  const spMap=getAllSpecies();
+  if(spMap.size===0){
+    container.innerHTML='<div class="taxo-empty">🔬 Todavía no hay especies identificadas.<br><br>Cuando identifiques una especie en la ficha de una fotografía, aparecerá aquí con su clasificación taxonómica completa obtenida automáticamente de internet.</div>';
+    return;
+  }
+  spMap.forEach((data,sp)=>{
+    const taxo=getTaxo(sp);
+    const card=document.createElement('div');card.className='taxo-card reveal';
+    const imgSrc=taxo?.image||data.src;
+    card.innerHTML=
+      '<div class="taxo-card-img"><img src="'+imgSrc+'" alt="'+sp+'" onerror="this.src=\''+ data.src+'\'"></div>'+
+      '<div class="taxo-card-body">'+
+        '<div class="taxo-sci">'+(taxo?.scientificName||sp)+'</div>'+
+        (taxo?.commonName?'<div class="taxo-card-common">'+taxo.commonName+'</div>':'')+
+        (taxo?.class||taxo?.order?'<div class="taxo-meta">'+[taxo.class,taxo.order].filter(Boolean).join(' · ')+'</div>':'')+
+        (!taxo?'<div class="taxo-loading-badge">⏳ Cargando...</div>':'')+
+      '</div>';
+    card.addEventListener('click',()=>openTaxoPopup(sp,data,getTaxo(sp)));
+    container.appendChild(card);
+    if(!taxo)fetchAndCacheTaxo(sp).then(t=>{if(t)renderTaxonomyGrid();});
+  });
+  initReveal();
+}
+
+function openTaxoPopup(sp,data,taxo){
+  const content=document.getElementById('taxoContent');
+  const ranks=[
+    {label:'Reino',    k:'kingdom', italic:false},
+    {label:'Filo',     k:'phylum',  italic:false},
+    {label:'Clase',    k:'class',   italic:false},
+    {label:'Orden',    k:'order',   italic:false},
+    {label:'Familia',  k:'family',  italic:false},
+    {label:'Género',   k:'genus',   italic:true},
+    {label:'Especie',  k:'species', italic:true},
+    {label:'Nombre común', k:'commonName', italic:false}
+  ];
+  const imgSrc=taxo?.image||data.src;
+  content.innerHTML=
+    '<div class="taxo-popup-img"><img src="'+imgSrc+'" alt="'+sp+'" onerror="this.src=\''+data.src+'\'"></div>'+
+    '<div class="taxo-popup-body">'+
+      '<div class="taxo-popup-sci">'+(taxo?.scientificName||sp)+'</div>'+
+      (taxo?.commonName?'<div class="taxo-popup-common-name">'+taxo.commonName+'</div>':'')+
+      (taxo?
+        '<div class="taxo-tree">'+
+          ranks.map(r=>taxo[r.k]?
+            '<div class="taxo-rank">'+
+              '<div class="taxo-rank-label">'+r.label+'</div>'+
+              '<div class="taxo-rank-value'+(r.italic?' taxo-rank-italic':'')+'">'+taxo[r.k]+'</div>'+
+            '</div>':''
+          ).join('')+
+        '</div>'
+        :'<div class="taxo-fetching">⏳ Cargando clasificación desde la base de datos científica...</div>'
+      )+
+      '<div class="taxo-popup-photo-ref">📷 Registrada en: '+data.title+'</div>'+
+    '</div>';
+  document.getElementById('taxoOverlay').style.display='flex';
+  if(!taxo)fetchAndCacheTaxo(sp).then(t=>{if(t){openTaxoPopup(sp,data,t);}});
+}
+function closeTaxoPopup(e){
+  if(!e||e.target===document.getElementById('taxoOverlay')||e.currentTarget===document.querySelector('.taxo-popup-close'))
+    document.getElementById('taxoOverlay').style.display='none';
+}
+
+/* ── QUIZ ── */
+let qScore={c:0,t:0};let qCurrent=null;let qAnswered=false;
+function shuffle(arr){return arr.slice().sort(()=>Math.random()-.5);}
+function initQuiz(){
+  const identified=animals.filter(a=>gc(a.id).some(c=>c.animal));
+  const container=document.getElementById('quizContainer');
+  if(identified.length<2){
+    container.innerHTML='<div class="quiz-not-ready"><div class="qnr-icon">🔬</div><h3>¡Necesitas más identificaciones!</h3><p>Para jugar el Quiz necesitas identificar al menos 2 animales en la galería. Ve a las fichas de las fotografías y añade el nombre de los animales.</p></div>';
+    return;
+  }
+  loadQuizQuestion(identified);
+}
+function loadQuizQuestion(identified){
+  if(!identified){identified=animals.filter(a=>gc(a.id).some(c=>c.animal));}
+  qAnswered=false;
+  const idx=Math.floor(Math.random()*identified.length);
+  const correct=identified[idx];
+  const correctName=gc(correct.id).find(c=>c.animal).animal;
+  const decoys=shuffle(identified.filter((_,i)=>i!==idx)).slice(0,3).map(a=>gc(a.id).find(c=>c.animal).animal);
+  const options=shuffle([correctName,...decoys]);
+  qCurrent={animal:correct,correctName,options};
+  const container=document.getElementById('quizContainer');
+  container.innerHTML=
+    '<div class="quiz-card">'+
+      '<img class="quiz-photo" src="'+correct.src+'" alt="" onerror="this.src=\'https://placehold.co/700x320/163A2F/D4A94F?text=Foto\'">'+ 
+      '<div class="quiz-card-body">'+
+        '<p class="quiz-question">🔍 ¿Qué animal aparece en esta fotografía?</p>'+
+        '<div class="quiz-options">'+options.map(o=>'<button class="quiz-opt" onclick="checkAnswer(\''+ o.replace(/'/g,'\\\'')+'\')">'+o+'</button>').join('')+'</div>'+
+        '<div class="quiz-feedback" id="quizFeedback" style="display:none"></div>'+
+        '<button class="btn-next-quiz" id="btnNext" onclick="loadQuizQuestion()" style="display:none">Siguiente pregunta →</button>'+
+      '</div>'+
+    '</div>';
+}
+function checkAnswer(answer){
+  if(qAnswered)return;qAnswered=true;qScore.t++;
+  const isRight=answer===qCurrent.correctName;
+  if(isRight)qScore.c++;
+  document.querySelectorAll('.quiz-opt').forEach(b=>{
+    b.classList.add('answered');
+    if(b.textContent.trim()===qCurrent.correctName)b.classList.add('correct');
+    else if(b.textContent.trim()===answer&&!isRight)b.classList.add('wrong');
+  });
+  const fb=document.getElementById('quizFeedback');
+  fb.style.display='block';
+  fb.className='quiz-feedback '+(isRight?'right':'wrong-fb');
+  fb.textContent=isRight?'✅ ¡Correcto! Es un '+qCurrent.correctName+'.':'❌ Era '+qCurrent.correctName+'. ¡Sigue intentando!';
+  document.getElementById('btnNext').style.display='block';
+  document.getElementById('qCorrect').textContent=qScore.c;
+  document.getElementById('qTotal').textContent=qScore.t;
+  document.getElementById('qPct').textContent=Math.round(qScore.c/qScore.t*100)+'%';
+}
+
+/* ── DETAIL ── */
+let curId=null;
+function openDetail(id){
+  curId=id;ivis(id);
+  const a=animals.find(x=>x.id===id);if(!a)return;
+  const img=document.getElementById('detailImg');
+  img.src=a.src;img.onerror=function(){this.src='https://placehold.co/1200x800/163A2F/D4A94F?text=Imagen';};
+  document.getElementById('detailTitle').textContent=a.title;
+  document.getElementById('detailCredit').textContent='📸 '+a.photographer;
+  document.getElementById('detailVisits').textContent='👁 '+gvis(id)+' visitas';
+  document.getElementById('cfWrap').classList.remove('open');
+  clearCF();renderMods(a);renderDiscs(a);
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('detail').classList.add('active');
+  window.scrollTo({top:0,behavior:'instant'});
+  setTimeout(()=>document.querySelectorAll('.detail-module').forEach((m,i)=>{setTimeout(()=>m.classList.add('visible'),i*110);}),80);
+}
+function renderMods(a){
+  const c=gc(a.id);
+  const uniq=arr=>[...new Set(arr.filter(Boolean))];
+  const AN=uniq(c.map(x=>x.animal)),SP=uniq(c.map(x=>x.species));
+  const HB=uniq(c.map(x=>x.habitat)),DT=uniq(c.map(x=>x.diet));
+  const FACTS=c.filter(x=>x.fact).map(x=>x.fact).slice(0,3);
+  const mods=[
+    {label:'🐾 ¿Qué animal es?',v:AN[0],sub:AN.slice(1).join(' · ')},
+    {label:'🔬 Especie',v:SP[0],sub:SP.slice(1).join(' · ')},
+    {label:'🌍 ¿Dónde vive?',v:HB[0],sub:HB.slice(1).join(' · ')},
+    {label:'🌿 ¿Qué come?',v:DT[0],sub:DT.slice(1).join(' · ')},
+  ];
+  let html=mods.map(m=>
+    '<div class="detail-module"><div class="mod-label">'+m.label+'</div>'+
+    (m.v?'<div class="mod-value">'+m.v+'</div>'+(m.sub?'<div class="mod-sub">'+m.sub+'</div>':''): '<div class="mod-empty">Nadie lo ha identificado aún. ¡Sé el primero!</div>')+'</div>'
+  ).join('');
+  if(FACTS.length){
+    html+='<div class="detail-module"><div class="mod-label">💡 Datos curiosos</div>'+FACTS.map(f=>'<div style="font-size:.88rem;color:#3d4d3d;line-height:1.55;margin-bottom:8px;">• '+f+'</div>').join('')+'</div>';
+  }
+  document.getElementById('detailModules').innerHTML=html;
+}
+function renderDiscs(a){
+  const c=gc(a.id);
+  document.getElementById('discCount').textContent='('+c.length+')';
+  const list=document.getElementById('discList');
+  if(!c.length){list.innerHTML='<div class="no-disc">🔬 Sin descubrimientos aún. ¡Comparte lo que sabes!</div>';return;}
+  const sorted=[...c].map((x,i)=>({...x,_oi:i})).sort((a,b)=>gvote(curId,b.cid||b._oi)-gvote(curId,a.cid||a._oi));
+  list.innerHTML=sorted.map(x=>{
+    const cid=x.cid||x._oi;
+    const votes=gvote(curId,cid);const voted=hvoted(curId,cid);
+    return '<div class="disc-card">'+
+      '<div class="dc-top"><div class="dc-name">👤 '+(x.name||'Anónimo')+'</div><div class="dc-date">'+x.date+'</div></div>'+
+      '<div class="dc-tags">'+
+        (x.animal?'<span class="dc-tag tag-a">🐾 '+x.animal+'</span>':'')+
+        (x.species?'<span class="dc-tag tag-s">🔬 '+x.species+'</span>':'')+
+        (x.habitat?'<span class="dc-tag tag-h">🌍 '+x.habitat+'</span>':'')+
+        (x.diet?'<span class="dc-tag tag-d">🌿 '+x.diet+'</span>':'')+
+      '</div>'+
+      (x.comment?'<div class="dc-text">'+x.comment+'</div>':'')+
+      (x.fact?'<div class="dc-fact">💡 '+x.fact+'</div>':'')+
+      '<div class="dc-vote"><button class="btn-vote'+(voted?' voted':'')+'" onclick="doVote('+ curId+','+(JSON.stringify(cid))+ ')">'+(voted?'✅':'👍')+' Útil</button><span class="vote-count">'+votes+' voto'+(votes!==1?'s':'')+'</span></div>'+
+    '</div>';
+  }).join('');
+}
+function doVote(aid,cid){if(addvote(aid,cid)){const a=animals.find(x=>x.id===aid);if(a)renderDiscs(a);}}
+function toggleCF(){document.getElementById('cfWrap').classList.toggle('open');}
+function clearCF(){['cf_name','cf_animal','cf_species','cf_habitat','cf_diet','cf_comment','cf_fact'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});}
+async function submitDisc(){
+  if(!curId)return;
+  const name=document.getElementById('cf_name').value.trim();
+  const animal=document.getElementById('cf_animal').value.trim();
+  const species=document.getElementById('cf_species').value.trim();
+  const habitat=document.getElementById('cf_habitat').value.trim();
+  const diet=document.getElementById('cf_diet').value.trim();
+  const comment=document.getElementById('cf_comment').value.trim();
+  const fact=document.getElementById('cf_fact').value.trim();
+  if(!animal&&!comment){showToast('⚠️ Escribe el nombre del animal o un comentario.');return;}
+  sc(curId,{cid:Date.now(),name:name||'Anónimo',animal,species,habitat,diet,comment,fact,date:new Date().toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})});
+  clearCF();toggleCF();
+  const a=animals.find(x=>x.id===curId);if(a){renderMods(a);renderDiscs(a);}
+  showToast('🎉 ¡Descubrimiento publicado!');
+  if(species)fetchAndCacheTaxo(species).then(()=>{if(document.getElementById('taxonomy').classList.contains('active'))renderTaxonomyGrid();});
+}
+function goBack(){renderGallery();showSection('gallery');window.scrollTo({top:0,behavior:'instant'});}
+
+/* ── PUZZLE ── */
+let selA=null,pieces=[],pgrid=3,moves=0,won=false,dp=null,dox=0,doy=0,pTimer=null,pSecs=0;const PS=480;
+function renderThumbs(){
+  const list=document.getElementById('thumbList');list.innerHTML='';
+  animals.forEach(a=>{
+    const el=document.createElement('div');el.className='p-thumb';
+    el.innerHTML='<img src="'+a.src+'" alt="'+a.title+'" onerror="this.src=\'https://placehold.co/200x78/163A2F/D4A94F?text=Foto\'"><span>'+a.title+'</span>';
+    el.onclick=()=>{document.querySelectorAll('.p-thumb').forEach(t=>t.classList.remove('selected'));el.classList.add('selected');selA=a;won=false;document.getElementById('pStatus').innerHTML='<span>📌 "'+a.title+'" — Presiona Iniciar ▶</span>';};
+    list.appendChild(el);
+  });
+}
+function startPuzzle(){
+  if(!selA){showToast('⚠️ Primero selecciona una fotografía.');return;}
+  pgrid=parseInt(document.getElementById('diffSel').value);
+  moves=0;document.getElementById('movCnt').textContent='0';won=false;dp=null;
+  clearInterval(pTimer);pSecs=0;updTimer();pTimer=setInterval(()=>{pSecs++;updTimer();},1000);
+  buildPuzz();document.getElementById('pStatus').innerHTML='<span>🧩 Nivel '+pgrid+'×'+pgrid+'</span>';
+}
+function updTimer(){const m=String(Math.floor(pSecs/60)).padStart(2,'0'),s=String(pSecs%60).padStart(2,'0');const el=document.getElementById('timerDisp');if(el)el.textContent=m+':'+s;}
+function buildPuzz(){
+  const area=document.getElementById('puzzleArea');area.innerHTML='';pieces=[];
+  const pw=PS/pgrid,ph=PS/pgrid;
+  const slots=[];for(let r=0;r<pgrid;r++)for(let c=0;c<pgrid;c++)slots.push({x:c*pw,y:r*ph});
+  slots.sort(()=>Math.random()-.5);let idx=0;
+  for(let r=0;r<pgrid;r++){for(let c=0;c<pgrid;c++){
+    const sl=slots[idx++];const el=document.createElement('div');
+    el.style.cssText='position:absolute;left:'+sl.x+'px;top:'+sl.y+'px;width:'+pw+'px;height:'+ph+'px;background-image:url(\''+selA.src+'\');background-size:'+PS+'px '+PS+'px;background-position:-'+(c*pw)+'px -'+(r*ph)+'px;border:2px solid rgba(255,255,255,.9);box-shadow:3px 3px 14px rgba(0,0,0,.24);cursor:grab;box-sizing:border-box;border-radius:3px;user-select:none;z-index:2;';
+    const p={el,r,c,cx:c*pw,cy:r*ph,snapped:false};pieces.push(p);area.appendChild(el);
+    el.addEventListener('mousedown',e=>pieceDown(e,p),false);el.addEventListener('touchstart',e=>pieceDown(e,p),{passive:false});
+  }}
+}
+function getPos(e){const area=document.getElementById('puzzleArea'),rect=area.getBoundingClientRect();const src=e.touches?e.touches[0]:e;return{x:src.clientX-rect.left,y:src.clientY-rect.top};}
+function pieceDown(e,p){if(won||p.snapped)return;dp=p;const pos=getPos(e);dox=pos.x-parseFloat(p.el.style.left);doy=pos.y-parseFloat(p.el.style.top);p.el.style.zIndex=1000;p.el.style.cursor='grabbing';p.el.style.boxShadow='8px 8px 26px rgba(0,0,0,.38)';e.preventDefault();}
+function pMove(e){if(!dp)return;const pos=getPos(e);const pw=PS/pgrid,ph=PS/pgrid;dp.el.style.left=Math.max(0,Math.min(PS-pw,pos.x-dox))+'px';dp.el.style.top=Math.max(0,Math.min(PS-ph,pos.y-doy))+'px';if(e.cancelable)e.preventDefault();}
+function pUp(){if(!dp)return;const p=dp;const pw=PS/pgrid,ph=PS/pgrid;const cx=parseFloat(p.el.style.left),cy=parseFloat(p.el.style.top);if(Math.abs(cx-p.cx)<pw*.3&&Math.abs(cy-p.cy)<ph*.3){p.el.style.left=p.cx+'px';p.el.style.top=p.cy+'px';p.el.style.cursor='default';p.el.style.boxShadow='none';p.el.style.border='2px solid rgba(255,255,255,.25)';p.el.style.zIndex=1;p.snapped=true;}else{p.el.style.cursor='grab';p.el.style.boxShadow='3px 3px 14px rgba(0,0,0,.24)';p.el.style.zIndex=2;}moves++;document.getElementById('movCnt').textContent=moves;dp=null;if(pieces.length&&pieces.every(p=>p.snapped)){won=true;clearInterval(pTimer);const m=String(Math.floor(pSecs/60)).padStart(2,'0'),s=String(pSecs%60).padStart(2,'0');document.getElementById('pStatus').innerHTML='<div class="win-screen"><div class="win-title">🏆 Expedición completada</div><div class="win-sub">'+moves+' movimientos &nbsp;·&nbsp; '+m+':'+s+'</div></div>';confetti();}}
+function confetti(){const cols=['#D4A94F','#2F5E4E','#163A2F','#F5F1E8','#a8d5ba','#e8c472','#fff'];for(let i=0;i<90;i++){const el=document.createElement('div');const sz=Math.random()*10+5,col=cols[Math.floor(Math.random()*cols.length)];const d=Math.random()*2+2,dl=Math.random()*2.4,rot=(Math.random()*720)+'deg';el.style.cssText='position:fixed;top:-20px;left:'+(Math.random()*100)+'vw;width:'+sz+'px;height:'+sz+'px;background:'+col+';border-radius:'+(Math.random()>.5?'50%':'3px')+';animation:cfFall '+d+'s '+dl+'s linear forwards;z-index:9999;pointer-events:none;--rot:'+rot+';';document.body.appendChild(el);setTimeout(()=>el.remove(),(d+dl)*1000+300);}}
+window.addEventListener('mousemove',pMove);window.addEventListener('mouseup',pUp);
+window.addEventListener('touchmove',pMove,{passive:false});window.addEventListener('touchend',pUp);
+
+/* ── REVEAL ── */
+function initReveal(){
+  const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:.1});
+  document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+  const sObs=new IntersectionObserver(entries=>{if(entries[0].isIntersecting){calcStats();sObs.disconnect();}},{threshold:.3});
+  const imp=document.getElementById('impactSection');if(imp)sObs.observe(imp);
+}
+
+/* ── TOAST ── */
+let tT;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),3200);}
+
+/* ── INIT ── */
+renderGallery();
+initReveal();
+</script>
+</body>
+</html>

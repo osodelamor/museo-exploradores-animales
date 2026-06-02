@@ -1,0 +1,52 @@
+╔═══════════════════════════════════════════════════════╗
+║   📁 CARPETA DE FOTOS — Exploradores de Animales      ║
+╚═══════════════════════════════════════════════════════╝
+
+Aquí van TODAS las fotografías de animales del proyecto.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PASOS PARA AGREGAR UNA FOTO NUEVA:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASO 1 — Copia tu foto dentro de ESTA carpeta (fotos_animales)
+         Ejemplo: mi_perro.jpg
+
+PASO 2 — Abre el archivo "mis_fotos.js" que está en la
+         carpeta principal (exploradores_animales)
+
+PASO 3 — Añade un bloque como este al final de la lista:
+
+         {
+           id: 7,
+           src: "fotos_animales/mi_perro.jpg",
+           title: "Fotografía #7",
+           photographer: "Nombre del niño, edad"
+         },
+
+         ⚠️ El nombre en src: debe ser EXACTAMENTE igual
+            al nombre del archivo que copiaste en este paso 1.
+
+PASO 4 — Guarda el archivo mis_fotos.js
+
+PASO 5 — Abre index.html en el navegador
+         ¡La nueva foto aparece automáticamente!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMATOS DE IMAGEN ACEPTADOS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✅ .jpg  /  .jpeg
+  ✅ .png
+  ✅ .webp
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ CONSEJO IMPORTANTE — Nombres de archivo:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Usa nombres simples, SIN espacios ni caracteres especiales.
+
+  ✅ Correcto:   foto1.jpg
+                 perro_collie.jpg
+                 mariposa01.png
+
+  ❌ Evitar:     Mi Foto Número 1.jpg  (tiene espacios)
+                 ñoño.jpg              (tiene ñ y tildes)
+                 foto de gato.jpg      (tiene espacios)
